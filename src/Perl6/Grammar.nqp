@@ -1482,7 +1482,7 @@ grammar Perl6::Grammar is HLL::Grammar does STD {
                 my $lnd  := $*W.dissect_longname($_<longname>);
                 my $name := $lnd.name;
                 my %cp   := $lnd.colonpairs_hash('need');
-                $*W.load_module($/, $name, %cp, $*GLOBALish);
+                $*W.load_module($/, $name, %cp, $*W.cur_lexpad);
             }
         }
     }
