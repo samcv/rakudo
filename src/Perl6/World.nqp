@@ -1198,9 +1198,6 @@ class Perl6::World is HLL::World {
         my $registry := self.find_symbol(['CompUnit', 'RepositoryRegistry']);
         my $comp_unit := $registry.head.need($spec);
         my $globalish := $comp_unit.handle.globalish-package.WHO;
-        #nqp::gethllsym('perl6', 'ModuleLoader').merge_globals($cur_GLOBALish, $globalish)
-        #    if ! nqp::isnull($globalish) && nqp::defined($globalish) && ! nqp::isnull($cur_GLOBALish);
-        #$cur_GLOBALish.merge-symbols($comp_unit.handle.globalish-package.WHO);
         nqp::gethllsym('perl6','ModuleLoader').merge_globals_lexically(self, $cur_GLOBALish, $globalish);
 
         return $comp_unit;
