@@ -356,6 +356,11 @@ multi sub skip($reason, $count = 1) is export {
     while $i <= $count { proclaim(1, "# SKIP " ~ $reason); $i = $i + 1; }
     $time_before = nqp::time_n;
 }
+multi sub skip($reason, Inf) is export {
+    die "A plan is required in order to use skip with Inf"
+      if nqp::iseq_i($no_plan,1);
+    skip-rest($reason);
+}
 
 sub skip-rest($reason = '<unknown>') is export {
     $time_after = nqp::time_n;
