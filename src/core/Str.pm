@@ -2891,6 +2891,7 @@ sub UNBASE_BRACKET($base, @a) {
     }
     $v;
 }
+#?if moar
 proto sub infix:<unicmp>(|) is pure { * }
 multi sub infix:<unicmp>(Str:D \a, Str:D \b) returns Order:D {
     nqp::isnull(nqp::getlexcaller('EXPERIMENTAL-UNICMP')) and X::Experimental.new(
@@ -2901,6 +2902,24 @@ multi sub infix:<unicmp>(Str:D \a, Str:D \b) returns Order:D {
         nqp::unicmp_s(
             nqp::unbox_s(a), nqp::unbox_s(b), 15,0,0))
 }
+proto sub infix:<coll>(|) { * }
+multi sub infix:<coll>(Str:D \a, Str:D \b) returns Order:D {
+    nqp::isnull(nqp::getlexcaller('EXPERIMENTAL-UNICMP')) and X::Experimental.new(
+        feature => "the 'coll' operator",
+        use     => "unicmp"
+    ).throw;
+    ORDER(
+        nqp::unicmp_s(
+            nqp::unbox_s(a), nqp::unbox_s(b), $*COLLATION.collation-level,0,0))
+}
+#?endif
+#?if !moar
+proto sub infix:<unicmp>(|) { * }
+multi sub infix:<unicmp> { X::NYI.new(:feature<unicmp>).throw }
+proto sub infix:<coll>(|) is pure { * }
+multi sub infix:<coll> { X::NYI.new(:feature<coll>).throw }
+#?endif
+
 sub chrs(*@c) returns Str:D {
     fail X::Cannot::Lazy.new(action => 'chrs') if @c.is-lazy;
     my $list     := nqp::getattr(@c,List,'$!reified');
