@@ -868,6 +868,26 @@ class Perl6::Actions is HLL::Actions does STDActions {
             'v', QAST::Op.new( :op<callmethod>, :name<sink>, $past )
         );
     }
+    sub wrap_option_a_code($/, $code, $delimiter) {
+        wrap_option_n_code($/,
+            QAST::Stmts.new(
+                QAST::Op.new( :op(<bind>),
+                    QAST::Var.new( :name(<$f>), :scope(<lexical>)),
+                    QAST::Op.new(:op('callmethod'), :name('STORE'),
+                        QAST::WVal.new( :value($*W.find_symbol(['Array'])) ),
+                        QAST::Op.new(:name<&split>, :op<call>,
+                            QAST::SVal.new(:value(<,>)),
+                            QAST::Var.new(:name<$_>, :scope<lexical>)
+                        ),
+                    ),
+                ),
+                QAST::Op.new(:name<&say>, :op<call>,
+                    QAST::Var.new(:name<$f>, :scope<lexical>)
+                ),
+                $code
+            )
+        )
+    }
 
     # Turn $code into "for lines() { $code; say $_ }"
     # &wrap_option_n_code already does the C<for> loop, so we just add the
@@ -919,7 +939,10 @@ class Perl6::Actions is HLL::Actions does STDActions {
             stderr().print($*W.group_exception().gist());
         }
 
-        if %*COMPILING<%?OPTIONS><p> { # also covers the -np case, like Perl 5
+        if %*COMPILING<%?OPTIONS><a> { # also covers the -na case, like Perl 5
+            $mainline[1] := QAST::Stmt.new(wrap_option_a_code($/, $mainline[1], ','));
+        }
+        elsif %*COMPILING<%?OPTIONS><p> { # also covers the -np case, like Perl 5
             $mainline[1] := QAST::Stmt.new(wrap_option_p_code($/, $mainline[1]));
         }
         elsif %*COMPILING<%?OPTIONS><n> {
