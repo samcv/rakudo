@@ -879,7 +879,8 @@ class Perl6::Actions is HLL::Actions does STDActions {
                             QAST::WVal.new( :value($*W.find_symbol(['Array'])) )
                         ),
                         QAST::Op.new(:name<&split>, :op<call>,
-                            QAST::SVal.new(:value(<,>)),
+                            $*W.add_string_constant($delimiter),
+                            #QAST::SVal.new(:value(<,>)),
                             QAST::Var.new(:name<$_>, :scope<lexical>)
                         ),
                     ),
@@ -940,7 +941,11 @@ class Perl6::Actions is HLL::Actions does STDActions {
         }
 
         if %*COMPILING<%?OPTIONS><a> { # also covers the -na case, like Perl 5
-            $mainline[1] := QAST::Stmt.new(wrap_option_a_code($/, $mainline[1], ','));
+            my %envhash := nqp::getenvhash;
+            my str $del := nqp::existskey(%envhash,  'PERL6_SPLIT_DELIMITER')
+                ?? nqp::atkey(%envhash, 'PERL6_SPLIT_DELIMITER') !! ',';
+            note("Delimiter is '" ~ ($del ?? $del !! "UNDEFINED") ~ "'");
+            $mainline[1] := QAST::Stmt.new(wrap_option_a_code($/, $mainline[1], $del));
         }
         elsif %*COMPILING<%?OPTIONS><p> { # also covers the -np case, like Perl 5
             $mainline[1] := QAST::Stmt.new(wrap_option_p_code($/, $mainline[1]));
