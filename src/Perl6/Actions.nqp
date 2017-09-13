@@ -872,9 +872,11 @@ class Perl6::Actions is HLL::Actions does STDActions {
         wrap_option_n_code($/,
             QAST::Stmts.new(
                 QAST::Op.new( :op(<bind>),
-                    QAST::Var.new( :name(<$f>), :scope(<lexical>)),
+                    QAST::Var.new( :name(<$f>), :scope(<lexical>), :decl<var>),
                     QAST::Op.new(:op('callmethod'), :name('STORE'),
-                        QAST::WVal.new( :value($*W.find_symbol(['Array'])) ),
+                        QAST::Op.new(:op<callmethod>, :name(<new>),
+                            QAST::WVal.new( :value($*W.find_symbol(['Array'])) )
+                        ),
                         QAST::Op.new(:name<&split>, :op<call>,
                             QAST::SVal.new(:value(<,>)),
                             QAST::Var.new(:name<$_>, :scope<lexical>)
