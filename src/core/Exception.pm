@@ -164,7 +164,7 @@ my class X::Method::NotFound is Exception {
                 when Cool { %suggestions{$_} = 0 for <chars codes>; }
                 default   { %suggestions{$_} = 0 for <elems chars codes>; }
             }
-            
+
         }
         elsif $.method eq 'bytes' {
             %suggestions<encode($encoding).bytes> = 0;
@@ -2209,7 +2209,7 @@ my class X::Assignment::RO is Exception {
     method message {
         "Cannot modify an immutable {$.value.^name} ({$.value.gist})"
     }
-    method typename { $.value.^name } 
+    method typename { $.value.^name }
 }
 
 my class X::Assignment::RO::Comp does X::Comp {
@@ -2469,7 +2469,8 @@ my class X::Multi::NoMatch is Exception {
         my @priors;
         if $.capture {
             for $.capture.list {
-                try @bits.push($where ?? .perl !! .WHAT.perl );
+                note "in capture.list loop: .perl: ", .perl;
+                try @bits.push($where ?? .perl !! "{.WHAT.perl}{ .defined ?? ':D' !! ':u' }" );
                 @bits.push($_.^name) if $!;
                 when Failure {
                     @priors.push(" " ~ .mess);
@@ -2491,12 +2492,16 @@ my class X::Multi::NoMatch is Exception {
         else {
             @bits.push('...');
         }
-        if @cand && @cand[0] ~~ /': '/ {
+        if @cand && @cand[0].contains: ': ' {
             my $invocant = @bits.shift;
             my $first = @bits ?? @bits.shift !! '';
-            @bits.unshift($invocant ~ ': ' ~ $first);
+            @bits.unshift: $invocant ~ ': ' ~ $first;
         }
-        my $cap = '(' ~ @bits.join(", ") ~ ')';
+        for @bits {
+            note "bit: {.perl} $_ WHAT {.WHAT} defined: {.defined}";
+        }
+        my $cap = '(' ~ @bits.join(<, >) ~ ')';
+        note "dispatcher.name: '$.dispatcher.name()' cap: '$cap' \@bits: '@bits.perl()'";
         @priors = flat "Earlier failures:\n", @priors, "\nFinal error:\n " if @priors;
         @priors.join ~ "Cannot resolve caller $.dispatcher.name()$cap; " ~ (
             @un-rw-cand

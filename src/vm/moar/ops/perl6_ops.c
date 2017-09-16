@@ -29,12 +29,12 @@ static MVMCallsiteEntry one_str_flags[] = { MVM_CALLSITE_ARG_STR };
 static MVMCallsite     one_str_callsite = { one_str_flags, 1, 1, 1, 0 };
 
 /* Assignment type check failed callsite. */
-static MVMCallsiteEntry atcf_flags[] = { MVM_CALLSITE_ARG_STR, MVM_CALLSITE_ARG_OBJ, 
+static MVMCallsiteEntry atcf_flags[] = { MVM_CALLSITE_ARG_STR, MVM_CALLSITE_ARG_OBJ,
                                          MVM_CALLSITE_ARG_OBJ };
 static MVMCallsite     atcf_callsite = { atcf_flags, 3, 3, 3, 0 };
 
 /* Dispatcher vivify_for callsite. */
-static MVMCallsiteEntry disp_flags[] = { MVM_CALLSITE_ARG_OBJ, MVM_CALLSITE_ARG_OBJ, 
+static MVMCallsiteEntry disp_flags[] = { MVM_CALLSITE_ARG_OBJ, MVM_CALLSITE_ARG_OBJ,
                                          MVM_CALLSITE_ARG_OBJ, MVM_CALLSITE_ARG_OBJ };
 static MVMCallsite     disp_callsite = { disp_flags, 4, 4, 4, 0 };
 
@@ -124,7 +124,7 @@ static void p6settypes(MVMThreadContext *tc, MVMuint8 *cur_op) {
         get_type(tc, conf, "ContainerDescriptor", ContainerDescriptor);
         get_type(tc, conf, "Nil", Nil);
     });
-    
+
     /* Set up default container descriptor. */
     {
         MVMString *element;
@@ -327,6 +327,8 @@ static MVMuint8 s_p6decontrv[] = {
 static MVMObject *Iterable = NULL;
 static void p6decontrv(MVMThreadContext *tc, MVMuint8 *cur_op) {
     MVMObject *retval;
+    if (!cur_op)
+        MVM_exception_throw_adhoc(tc, "p6decontrv: did not get any cur_op argument");
     if (!Iterable)
         Iterable = MVM_frame_find_lexical_by_name(tc,
             MVM_string_ascii_decode_nt(tc, tc->instance->VMString, "Iterable"),

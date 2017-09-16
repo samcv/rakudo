@@ -20,7 +20,7 @@ my @clo := $comp.commandline_options();
 @clo.push('parsetrace');
 @clo.push('setting=s');
 @clo.push('n');
-@clo.push('a');
+@clo.push('a=s?');
 @clo.push('p');
 @clo.push('doc=s?');
 @clo.push('optimize=s?');
