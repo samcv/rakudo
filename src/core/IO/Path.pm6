@@ -607,7 +607,8 @@ my class IO::Path is Cool does IO {
     }
 
     proto method slurp() {*}
-    multi method slurp(IO::Path:D: :$enc, :$bin) {
+    # In 6.d :$strict will default to True
+    multi method slurp(IO::Path:D: :$enc, :$bin, Str :$replacement, Bool:D :$strict = False) {
         # We use an IO::Handle in binary mode, and then decode the string
         # all in one go, which avoids the overhead of setting up streaming
         # decoding.
@@ -617,7 +618,8 @@ my class IO::Path is Cool does IO {
             nqp::stmts(
                 (my $blob := $handle.slurp(:close)),
                 nqp::if($bin, $blob, nqp::join("\n",
-                  nqp::split("\r\n", $blob.decode: $enc || 'utf-8')))
+                  nqp::split("\r\n", $blob.decode($enc || 'utf-8', :$replacement, :$strict)))
+                )
             ))
     }
 
