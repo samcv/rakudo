@@ -1872,7 +1872,7 @@ my class Str does Stringy { # declared in BOOTSTRAP
                     (my int $needle-index = nqp::atpos_i($pair,1)),
                     nqp::unless(
                       $skip && nqp::iseq_i($from,$pos), (
-                        nqp::if( $im, (
+                        if $im {
                             my str $needle = nqp::atpos_s($needles,$needle-index);
                             my str $needle_p = nqp::substr($str,$pos+nqp::sub_i($from,$pos),nqp::chars($needle));
                             my str $substr = nqp::substr($str,$pos,nqp::sub_i($from,$pos));
@@ -1889,15 +1889,15 @@ my class Str does Stringy { # declared in BOOTSTRAP
                             }
                             else {
                               my str $piece = $saved-str ~ nqp::substr($str,$pos,nqp::sub_i($from,$pos));
-                              nqp::push($result,
-                                $piece);
+                              nqp::push($result,$piece);
                               $saved-str = "";
                             }
-                          )
-                        )
-                      ),
-                      nqp::push($result,
-                        nqp::substr($str,$pos,nqp::sub_i($from,$pos)))
+                        }
+                        else {
+                            nqp::push($result,
+                              nqp::substr($str,$pos,nqp::sub_i($from,$pos)));
+                        }
+                      )
                     ),
                     nqp::if($k || $kv,
                       nqp::push($result,nqp::clone($needle-index))
