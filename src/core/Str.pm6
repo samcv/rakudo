@@ -1687,11 +1687,40 @@ my class Str does Stringy { # declared in BOOTSTRAP
             }.new(self,$limit,$skip-empty));
         }
     }
-
+    sub break_ords (Str:D $haystack, Str:D $needle) {
+      my @out;
+      my @haystack = $haystack.ords;
+      my @needle = $needle.ords;
+      return return_parts(@haystack, @needle, @out, 0);
+    }
+    sub return_parts (@haystack, @needle, @out, Int:D $pos) {
+      return @out if $pos >= @haystack - 1;
+      my $start;
+      my $end;
+      my $i = $pos; my $j = 0;
+      while ($i < @haystack) {
+        my $prei = $i;
+        while ($j < @needle && @haystack[$i] == @needle[$j]) {
+          if $j == @needle - 1 {
+            $end = $i;
+          }
+          $j++; $i++;
+        }
+        $i = $prei + 1;
+        $j = 0;
+      };
+      if $end.defined {
+        $start = $end - @needle;
+        @out.push: $start == 0 ?? "" !! @haystack[0..$start-1].chrs;
+        @out.push: $end == @haystack - 1 ?? "" !! @haystack[$end+1..*].chrs;
+        return return_parts(@haystack, @needle, @out, $end + 1);
+      }
+      return @out;
+    };
     multi method split(Str:D: @needles, $parts is copy = Inf;;
-       :$v is copy, :$k, :$kv, :$p, :$skip-empty) {
+       :$v is copy, :$k, :$kv, :$p, :$skip-empty, :$ignoremark) {
         my int $any = self!ensure-split-sanity($v,$k,$kv,$p);
-
+        my int $im = $ignoremark ?? 1 !! 0;
         # must all be Cool, otherwise we'll just use a regex
         return self.split(rx/ @needles /,:$v,:$k,:$kv,:$p,:$skip-empty) # / hl
           unless Rakudo::Internals.ALL_TYPE(@needles,Cool);
@@ -1733,7 +1762,11 @@ my class Str does Stringy { # declared in BOOTSTRAP
                     (my int $todo = $limit),
                     nqp::while(
                       nqp::isge_i(($todo = nqp::sub_i($todo,1)),0)
-                        && nqp::isge_i($i = nqp::index($str,$need,$pos),0),
+                        && nqp::isge_i($i =
+                            nqp::if($im,
+                                nqp::indexim($str, $need, $pos),
+                                nqp::index($str,$need,$pos))
+                            ,0),
                       nqp::stmts(
                         nqp::push($positions,nqp::list_i($i,$index)),
                         ($pos = nqp::add_i($i,1)),
@@ -1741,7 +1774,12 @@ my class Str does Stringy { # declared in BOOTSTRAP
                     )
                   ),
                   nqp::while(
-                    nqp::isge_i($i = nqp::index($str,$need,$pos),0),
+                    nqp::isge_i(
+                          $i = nqp::if($im,
+                              nqp::indexim($str, $need, $pos),
+                              nqp::index($str,$need,$pos)
+                              )
+                          ,0),
                     nqp::stmts(
                       nqp::push($positions,nqp::list_i($i,$index)),
                       ($pos = nqp::add_i($i,1))
@@ -1816,6 +1854,7 @@ my class Str does Stringy { # declared in BOOTSTRAP
         my int $skip = ?$skip-empty;
         my int $pos = 0;
         my $result := nqp::create(IterationBuffer);
+        my str $saved-str = '';
         if $any {
             nqp::stmts(
               (my int $i = -1),
@@ -1832,7 +1871,31 @@ my class Str does Stringy { # declared in BOOTSTRAP
                   nqp::stmts(
                     (my int $needle-index = nqp::atpos_i($pair,1)),
                     nqp::unless(
-                      $skip && nqp::iseq_i($from,$pos),
+                      $skip && nqp::iseq_i($from,$pos), (
+                        nqp::if( $im, (
+                            my str $needle = nqp::atpos_s($needles,$needle-index);
+                            my str $needle_p = nqp::substr($str,$pos+nqp::sub_i($from,$pos),nqp::chars($needle));
+                            my str $substr = nqp::substr($str,$pos,nqp::sub_i($from,$pos));
+                            if ($needle_p ne $substr) {
+                                #note "needle not eq substr";
+                                #note "needle: ", $needle.uninames.perl;
+                                #note "substr: ", $substr.uninames.perl;
+                                #note "needle_p: ", $needle_p.uninames.perl;
+                                my @broken = break_ords($needle_p, $needle);
+                                #note 'broken: ', @broken».uniname.perl;
+                                my str $piece = $saved-str ~ nqp::substr($str,$pos,nqp::sub_i($from,$pos)) ~ @broken[0];
+                                nqp::push($result,$piece);
+                                $saved-str = @broken[1];
+                            }
+                            else {
+                              my str $piece = $saved-str ~ nqp::substr($str,$pos,nqp::sub_i($from,$pos));
+                              nqp::push($result,
+                                $piece);
+                              $saved-str = "";
+                            }
+                          )
+                        )
+                      ),
                       nqp::push($result,
                         nqp::substr($str,$pos,nqp::sub_i($from,$pos)))
                     ),
@@ -1882,9 +1945,9 @@ my class Str does Stringy { # declared in BOOTSTRAP
               )
             )
         }
-        nqp::push($result,nqp::substr($str,$pos))
+        nqp::push($result,$saved-str ~ nqp::substr($str,$pos))
           unless $skip && nqp::iseq_i($pos,nqp::chars($str));
-
+        #note(nqp::elems($positions)) if nqp::elems($positions) && $ignoremark;
         Seq.new(Rakudo::Iterator.ReifiedList($result))
     }
 
