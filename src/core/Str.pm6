@@ -1688,7 +1688,7 @@ my class Str does Stringy { # declared in BOOTSTRAP
         }
     }
     sub break_ords (Str:D $haystack, Str:D $needle) {
-      my @out;
+      my @out = ['', ''];
       my @haystack = $haystack.ords;
       my @needle = $needle.ords;
       return return_parts(@haystack, @needle, @out, 0);
@@ -1711,9 +1711,9 @@ my class Str does Stringy { # declared in BOOTSTRAP
       };
       if $end.defined {
         $start = $end - @needle;
-        @out.push: $start == 0 ?? "" !! @haystack[0..$start-1].chrs;
-        @out.push: $end == @haystack - 1 ?? "" !! @haystack[$end+1..*].chrs;
-        return return_parts(@haystack, @needle, @out, $end + 1);
+        @out[0] = @haystack[0..$start-1].chrs if $start !== 0;
+        @out[1] = @haystack[$end+1..*].chrs if $end !== @haystack - 1;
+        #return return_parts(@haystack, @needle, @out, $end + 1);
       }
       return @out;
     };
