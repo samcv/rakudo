@@ -179,6 +179,14 @@ my class IO::Handle {
             $!encoding = $encoding.name;
         }
         self!set-out-buffer-size($out-buffer);
+          # Add a byte order mark to the start of the file for utf16
+        nqp::if(nqp::isconcrete($enc) && nqp::iseq_s($!encoding, 'utf16'), (
+            if $create && !$exclusive && (!$append || $append && self.tell == 0) {
+              state $bom = buf16.new(0xFEFF);
+              note "tell is {self.tell()} append is $append";
+              self.write: $bom;
+            })
+        );
         self;
     }
 
